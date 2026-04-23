@@ -35,7 +35,7 @@ conda run -n cellpose python -u tune_parameters.py --phase 2 --diameter 150 --ce
 Phases: **1** varies `diameter × cellprob_threshold` (biggest levers); **2** varies `flow_threshold × pix_filter`; **3** covers low-impact params. Any individual parameter can be overridden with a comma-separated CLI flag, e.g. `--diameter 100,150,200`.
 
 Outputs:
-- `tune/phase<N>/<sample>__<combo>_labelled_segmentations.png` — one annotated preview per (crop × combo)
+- `tune/phase<N>/<combo>.png` — one contact-sheet PNG per parameter combo, showing every sampled crop side-by-side under that combo (grid rows default to one-per-image)
 - `tune/phase<N>/summary.csv` — one row per (crop, combo) with `n_cells`, `size_min/max/mean/median` in pixels
 
 See [PARAMETERS.md](PARAMETERS.md) for what each parameter does, default sweep ranges, and symptoms of bad values.

@@ -31,7 +31,7 @@ sys.stdout.reconfigure(line_buffering=True)
 import tifffile
 from pathlib import Path
 from cellpose.models import CellposeModel
-from bens_cellpose_utils import preview_cellpose_params
+from bens_cellpose_utils import preview_cellpose_params_tiled
 
 
 KNOWN_GOOD = {
@@ -96,6 +96,9 @@ def parse_args():
     p.add_argument('--iba1-channel', type=int, default=1)
     p.add_argument('--dapi-channel', type=int, default=0)
     p.add_argument('--label-fontsize', type=float, default=2)
+    p.add_argument('--grid-cols', type=int, default=None,
+                   help='Columns in the contact-sheet grid (default: '
+                        'regions_per_image * crops_per_region, so each row = one image)')
 
     # Per-parameter overrides (comma-separated). If set, overrides the phase grid.
     p.add_argument('--diameter', default=None,
@@ -203,24 +206,17 @@ def main():
 
     model = CellposeModel(gpu=True)
 
-    all_rows = []
+    grid_cols = args.grid_cols or (args.regions_per_image * args.crops_per_region)
+
     t_start = time.time()
-    for ci, crop in enumerate(crops, 1):
-        print(f'[{ci}/{len(crops)}] {crop["sample"]}  (origin y={crop["origin"][0]}, x={crop["origin"][1]})')
-        rows = preview_cellpose_params(
-            model=model,
-            reference_image=crop['data'],
-            param_grid=grid,
-            output_dir=str(out_dir),
-            sample_label=crop['sample'],
-            save_previews=True,
-            label_fontsize=args.label_fontsize,
-        )
-        for row in rows:
-            row['image'] = crop['image']
-            row['region'] = crop['region']
-            row['crop'] = crop['crop']
-            all_rows.append(row)
+    all_rows = preview_cellpose_params_tiled(
+        model=model,
+        crops=crops,
+        param_grid=grid,
+        output_dir=str(out_dir),
+        grid_cols=grid_cols,
+        label_fontsize=args.label_fontsize,
+    )
 
     summary_path = out_dir / 'summary.csv'
     with summary_path.open('w', newline='') as f:
