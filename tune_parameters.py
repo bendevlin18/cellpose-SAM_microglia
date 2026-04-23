@@ -106,6 +106,9 @@ def parse_args():
     p.add_argument('--grid-cols', type=int, default=None,
                    help='Columns in the contact-sheet grid (default: '
                         'regions_per_image * crops_per_region, so each row = one image)')
+    p.add_argument('--no-pdf', dest='pdf', action='store_false',
+                   help='Skip the combined multi-page PDF (one page per combo).')
+    p.set_defaults(pdf=True)
 
     # Per-parameter overrides (comma-separated). If set, overrides the phase grid.
     p.add_argument('--diameter', default=None,
@@ -239,6 +242,7 @@ def main():
     model = CellposeModel(gpu=True)
 
     grid_cols = args.grid_cols or (args.regions_per_image * args.crops_per_region)
+    pdf_path = str(out_dir / 'all_combos.pdf') if args.pdf else None
 
     t_start = time.time()
     all_rows = preview_cellpose_params_tiled(
@@ -248,6 +252,7 @@ def main():
         output_dir=str(out_dir),
         grid_cols=grid_cols,
         label_fontsize=args.label_fontsize,
+        pdf_path=pdf_path,
     )
 
     summary_path = out_dir / 'summary.csv'
@@ -261,6 +266,8 @@ def main():
     print(f'\nDone in {elapsed/60:.1f} min.')
     print(f'Previews -> {out_dir}/')
     print(f'Summary  -> {summary_path}')
+    if pdf_path:
+        print(f'PDF      -> {pdf_path}')
     print(f'{len(all_rows)} rows ({len(crops)} crops × {n_combos} combos).')
 
 

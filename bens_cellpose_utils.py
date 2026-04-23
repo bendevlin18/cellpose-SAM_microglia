@@ -264,6 +264,7 @@ def preview_cellpose_params_tiled(
     label_fontsize=2,
     tile_size_inches=3.0,
     dpi=150,
+    pdf_path=None,
 ):
     """Run a parameter grid across many crops, saving one contact-sheet PNG per combo.
 
@@ -272,11 +273,14 @@ def preview_cellpose_params_tiled(
     param_grid : dict mapping each of {diameter, cellprob_threshold, flow_threshold,
                  pix_filter, tile_norm_blocksize, niter} to a list of values.
     grid_cols  : columns in the output grid. Defaults to ceil(sqrt(n_crops)).
+    pdf_path   : if set, every combo's figure is additionally written as a page in
+                 this multi-page PDF for easy sequential browsing.
 
     Writes <output_dir>/<combo_label>.png per combo and returns one stats row per
     (crop, combo) with keys {sample, image, region, crop, combo, <params...>,
     n_cells, size_min, size_max, size_mean, size_median, error}.
     """
+    from matplotlib.backends.backend_pdf import PdfPages
     keys = ['diameter', 'cellprob_threshold', 'flow_threshold',
             'pix_filter', 'tile_norm_blocksize', 'niter']
     for k in keys:
@@ -291,69 +295,77 @@ def preview_cellpose_params_tiled(
         grid_cols = int(np.ceil(np.sqrt(n_crops)))
     grid_rows = int(np.ceil(n_crops / grid_cols))
 
+    pdf = PdfPages(pdf_path) if pdf_path else None
+
     results = []
-    for ci, combo in enumerate(combos, 1):
-        params = dict(zip(keys, combo))
-        label = combo_label(params)
-        print(f"[{ci}/{len(combos)}] {label}", flush=True)
+    try:
+        for ci, combo in enumerate(combos, 1):
+            params = dict(zip(keys, combo))
+            label = combo_label(params)
+            print(f"[{ci}/{len(combos)}] {label}", flush=True)
 
-        tnb = params['tile_norm_blocksize']
-        norm_param = (True if tnb == 0
-                      else {'normalize': True, 'tile_norm_blocksize': tnb})
+            tnb = params['tile_norm_blocksize']
+            norm_param = (True if tnb == 0
+                          else {'normalize': True, 'tile_norm_blocksize': tnb})
 
-        fig, axes = plt.subplots(
-            grid_rows, grid_cols,
-            figsize=(grid_cols * tile_size_inches, grid_rows * tile_size_inches),
-            dpi=dpi,
-        )
-        axes = np.atleast_2d(axes).reshape(grid_rows, grid_cols)
-        fig.suptitle(combo_title(params), fontsize=10)
+            fig, axes = plt.subplots(
+                grid_rows, grid_cols,
+                figsize=(grid_cols * tile_size_inches, grid_rows * tile_size_inches),
+                dpi=dpi,
+            )
+            axes = np.atleast_2d(axes).reshape(grid_rows, grid_cols)
+            fig.suptitle(combo_title(params), fontsize=10)
 
-        for ti, crop in enumerate(crops):
-            ax = axes[ti // grid_cols, ti % grid_cols]
-            row = {
-                'sample': crop['sample'], 'image': crop['image'],
-                'region': crop['region'], 'crop': crop['crop'],
-                'combo': label, **params,
-                'n_cells': 0, 'size_min': 0, 'size_max': 0,
-                'size_mean': 0.0, 'size_median': 0.0, 'error': '',
-            }
-            try:
-                masks, _, _ = model.eval(
-                    crop['data'],
-                    diameter=params['diameter'],
-                    channel_axis=2,
-                    flow_threshold=params['flow_threshold'],
-                    cellprob_threshold=params['cellprob_threshold'],
-                    normalize=norm_param,
-                    niter=params['niter'],
-                )
-                masks = mask_filter_fixed(masks, pix_size=params['pix_filter'])
-                stats = mask_size_stats(masks)
-                row.update(stats)
-                _render_overlay_to_ax(
-                    ax, crop['data'], masks,
-                    label_fontsize=label_fontsize,
-                    title=f"{crop['sample']}  n={stats['n_cells']}",
-                )
-            except Exception as e:
-                row['error'] = str(e)
-                ax.text(0.5, 0.5, f'ERROR\n{e}', ha='center', va='center',
-                        transform=ax.transAxes, fontsize=6, wrap=True)
-                ax.set_axis_off()
-            results.append(row)
+            for ti, crop in enumerate(crops):
+                ax = axes[ti // grid_cols, ti % grid_cols]
+                row = {
+                    'sample': crop['sample'], 'image': crop['image'],
+                    'region': crop['region'], 'crop': crop['crop'],
+                    'combo': label, **params,
+                    'n_cells': 0, 'size_min': 0, 'size_max': 0,
+                    'size_mean': 0.0, 'size_median': 0.0, 'error': '',
+                }
+                try:
+                    masks, _, _ = model.eval(
+                        crop['data'],
+                        diameter=params['diameter'],
+                        channel_axis=2,
+                        flow_threshold=params['flow_threshold'],
+                        cellprob_threshold=params['cellprob_threshold'],
+                        normalize=norm_param,
+                        niter=params['niter'],
+                    )
+                    masks = mask_filter_fixed(masks, pix_size=params['pix_filter'])
+                    stats = mask_size_stats(masks)
+                    row.update(stats)
+                    _render_overlay_to_ax(
+                        ax, crop['data'], masks,
+                        label_fontsize=label_fontsize,
+                        title=f"{crop['sample']}  n={stats['n_cells']}",
+                    )
+                except Exception as e:
+                    row['error'] = str(e)
+                    ax.text(0.5, 0.5, f'ERROR\n{e}', ha='center', va='center',
+                            transform=ax.transAxes, fontsize=6, wrap=True)
+                    ax.set_axis_off()
+                results.append(row)
 
-        for extra in range(n_crops, grid_rows * grid_cols):
-            axes[extra // grid_cols, extra % grid_cols].axis('off')
+            for extra in range(n_crops, grid_rows * grid_cols):
+                axes[extra // grid_cols, extra % grid_cols].axis('off')
 
-        fig.tight_layout(rect=(0, 0, 1, 0.97))
-        out_path = os.path.join(output_dir, f'{label}.png')
-        fig.savefig(out_path, dpi=dpi, bbox_inches='tight')
-        plt.close(fig)
+            fig.tight_layout(rect=(0, 0, 1, 0.97))
+            out_path = os.path.join(output_dir, f'{label}.png')
+            fig.savefig(out_path, dpi=dpi, bbox_inches='tight')
+            if pdf is not None:
+                pdf.savefig(fig, bbox_inches='tight')
+            plt.close(fig)
 
-        cell_counts = [r['n_cells'] for r in results[-n_crops:]]
-        print(f"  -> {out_path}  | cells: min={min(cell_counts)} "
-              f"max={max(cell_counts)} mean={np.mean(cell_counts):.1f}",
-              flush=True)
+            cell_counts = [r['n_cells'] for r in results[-n_crops:]]
+            print(f"  -> {out_path}  | cells: min={min(cell_counts)} "
+                  f"max={max(cell_counts)} mean={np.mean(cell_counts):.1f}",
+                  flush=True)
+    finally:
+        if pdf is not None:
+            pdf.close()
 
     return results

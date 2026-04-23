@@ -36,6 +36,7 @@ Phases: **1** varies `diameter × cellprob_threshold` (biggest levers); **2** va
 
 Outputs:
 - `tune/phase<N>/<combo>.png` — one contact-sheet PNG per parameter combo, showing every sampled crop side-by-side under that combo (grid rows default to one-per-image)
+- `tune/phase<N>/all_combos.pdf` — same contact sheets collected into a single multi-page PDF for easy sequential browsing. Opt out with `--no-pdf`.
 - `tune/phase<N>/summary.csv` — one row per (crop, combo) with `n_cells`, `size_min/max/mean/median` in pixels
 
 See [PARAMETERS.md](PARAMETERS.md) for what each parameter does, default sweep ranges, and symptoms of bad values.
@@ -123,6 +124,7 @@ Diameter sweeps have two extra shortcuts (precedence: `--diameter` > `--diameter
 | `--diameter-center` | — | Centre value; auto-generates `linspace(center*(1-spread), center*(1+spread), n)` — e.g. `--diameter-center 150` → `[75, 112.5, 150, 187.5, 225]` |
 | `--diameter-n` | `5` | Number of values for `--diameter-center` |
 | `--diameter-spread` | `0.5` | Fractional half-width for `--diameter-center` |
+| `--no-pdf` | — | Skip writing `all_combos.pdf` (PNG contact sheets are still written) |
 
 ### `validate_parameters.py`
 
