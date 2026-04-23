@@ -80,6 +80,84 @@ Outputs:
 | `visualize_results.py` | Overlay existing masks on raw images → `vis/` |
 | `bens_cellpose_utils.py` | Shared utilities: `segment_tiled`, `mask_filter_fixed`, `mask_size_stats`, export/overlay helpers |
 
+## CLI reference
+
+All scripts use `argparse`, so `--help` on any of them prints the full list. The tables below cover flags that affect behaviour day-to-day.
+
+### Common flags
+
+Shared across most scripts with identical meaning.
+
+| Flag | Default | Scripts | Description |
+|---|---|---|---|
+| `--image-dir` | `images` | tune, validate, run, visualize | Folder containing input `.tif` files |
+| `--iba1-channel` | `1` | tune, validate, run, visualize | IBA1 channel index in source images |
+| `--dapi-channel` | `0` | tune, validate, run, visualize | DAPI channel index in source images |
+| `--label-fontsize` | `2` | tune, validate, run | Font size for cell-ID labels on overview images |
+| `--tile-inner-size` | `384` | validate, run | Pixels per tile that end up in the stitched output |
+| `--tile-context` | `64` | validate, run | Extra context pixels around each tile |
+| `--batch-size` | `8` | validate, run | Tiles per model forward pass |
+| `--seed` | `0` | tune, validate | RNG seed for image/region selection |
+
+Parameter flags (`--diameter`, `--cellprob` / `--cellprob-threshold`, `--flow` / `--flow-threshold`, `--pix-filter`, `--tnb` / `--tile-norm-blocksize`, `--niter`) are documented in [PARAMETERS.md](PARAMETERS.md). Note that `tune` and `validate` use the short names (`--cellprob`, `--flow`, `--tnb`) while `run_segmentation` uses the long names (`--cellprob-threshold`, `--flow-threshold`, `--tile-norm-blocksize`).
+
+### `tune_parameters.py`
+
+| Flag | Default | Description |
+|---|---|---|
+| `--output-dir` | `tune` | Root output dir; previews written to `<output-dir>/phase<N>/` |
+| `--phase` | `1` | Preset grid to run: 1 (`diameter × cellprob`), 2 (`flow × pix_filter`), 3 (`tnb × niter`) |
+| `--n-images` | `4` | Images sampled from `--image-dir` |
+| `--regions-per-image` | `2` | Region centres chosen per image |
+| `--crops-per-region` | `3` | Jittered crops around each region centre |
+| `--crop-size` | `448` | Tile size in px (matches `segment_tiled`: 384 inner + 64 context × 2) |
+| `--jitter` | `200` | Max random offset (px) of crops around a region centre |
+
+Parameter overrides accept comma-separated lists (`--diameter 100,150,200`) and replace that parameter's values in the phase grid.
+
+### `validate_parameters.py`
+
+| Flag | Default | Description |
+|---|---|---|
+| `--output-dir` | `validate` | Where labelled full-image overviews are written |
+| `--n-images` | `3` | Full images sampled (respects `--seed`) |
+| `--diameter` | `150` | See PARAMETERS.md |
+| `--cellprob` | `-2.0` | `cellprob_threshold` |
+| `--flow` | `1.0` | `flow_threshold` |
+| `--pix-filter` | `500` | Minimum mask size in px |
+| `--tnb` | `100` | `tile_norm_blocksize` (0 = global normalization) |
+| `--niter` | `None` | Dynamics iterations; `None` = model default |
+
+### `run_segmentation.py`
+
+| Flag | Default | Description |
+|---|---|---|
+| `--diameter` | `150` | See PARAMETERS.md |
+| `--cellprob-threshold` | `-2.0` | Cell probability threshold |
+| `--flow-threshold` | `1.0` | Flow error threshold |
+| `--tile-norm-blocksize` | `100` | Local-contrast block size (0 = global) |
+| `--pix-filter` | `500` | Minimum mask size in px |
+| `--mask-dir` | `masks` | Output dir for `_mask.tif` files |
+| `--labelled-dir` | `labelled` | Output dir for annotated overview PNGs |
+| `--exports-dir` | `exports` | Output dir for per-cell IBA1 crops |
+| `--cell-padding` | `20` | Padding (px) around each cell bounding box in per-cell crops |
+
+### `visualize_results.py`
+
+| Flag | Default | Description |
+|---|---|---|
+| `--mask-dir` | `masks` | Directory with `*_mask.tif` files |
+| `--output-dir` | `vis` | Where 3-panel overlay PNGs are written |
+
+Also accepts `--image-dir`, `--iba1-channel`, `--dapi-channel` from the common flags.
+
+### `evaluate_segmentation.py`
+
+| Flag | Default | Description |
+|---|---|---|
+| `--mask-dir` | `masks` | Directory with `*_mask.tif` files |
+| `--csv` | `metrics.csv` | CSV path for per-image QC metrics |
+
 ## Cellpose v4 API notes
 
 - `model_type` and `channels` are deprecated — omit them.
