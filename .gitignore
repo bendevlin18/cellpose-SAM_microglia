@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+.Rhistory
+
+# Raw data — too large for git, user provides locally
+images/
+
+# Pipeline outputs
+masks/
+labelled/
+exports/
+
+# Tuning / validation outputs
+tune/
+validate/
+
+# Legacy output from earlier runs, to be deleted later
+old/
+
+# Reference outputs from other pipelines (multi-GB)
+test_sets/

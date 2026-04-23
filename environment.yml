@@ -1,0 +1,49 @@
+# Conda environment for cellpose-sam microglia segmentation.
+#
+# Reproduces the `cellpose` env documented in CLAUDE.md: CUDA 12.6 build of
+# torch for NVIDIA RTX 3060, cellpose 4.0.8 (cpsam model), and the image I/O
+# + plotting stack. Jupyter is intentionally omitted — none of the project
+# scripts need it; add it manually if you want notebook access.
+#
+# Create or update the env:
+#     conda env create -f environment.yml
+#     conda env update -f environment.yml --prune
+#
+# All project scripts are invoked as:
+#     conda run -n cellpose python -u <script.py>
+
+name: cellpose
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu126
+      - torch==2.9.1+cu126
+      - torchvision==0.24.1
+      - cellpose==4.0.8
+      - contourpy==1.3.2
+      - cycler==0.12.1
+      - fastremap==1.17.7
+      - filelock==3.20.1
+      - fill-voids==2.1.1
+      - fonttools==4.62.1
+      - fsspec==2025.12.0
+      - imagecodecs==2025.3.30
+      - kiwisolver==1.5.0
+      - markupsafe==3.0.3
+      - matplotlib==3.10.8
+      - mpmath==1.3.0
+      - natsort==8.4.0
+      - networkx==3.4.2
+      - numpy==2.2.6
+      - opencv-python-headless==4.12.0.88
+      - pillow==12.0.0
+      - pyparsing==3.3.2
+      - roifile==2025.12.12
+      - scipy==1.15.3
+      - segment-anything==1.0
+      - sympy==1.14.0
+      - tifffile==2025.5.10
+      - tqdm==4.67.1
