@@ -213,6 +213,20 @@ def combo_label(params):
     )
 
 
+def combo_title(params):
+    """Human-readable label for a parameter combo (use in plot titles, not filenames)."""
+    niter = params.get('niter')
+    niter_str = 'auto' if niter is None else str(niter)
+    return (
+        f"diameter={params['diameter']} | "
+        f"cellprob_thresh={params['cellprob_threshold']} | "
+        f"flow_thresh={params['flow_threshold']} | "
+        f"pix_filter={params['pix_filter']} | "
+        f"tile_norm={params['tile_norm_blocksize']} | "
+        f"niter={niter_str}"
+    )
+
+
 def _render_overlay_to_ax(ax, img, maski, label_fontsize=2, title=None):
     """Draw a mask overlay + per-cell ID labels onto a matplotlib Axes."""
     img0 = img.copy()
@@ -293,7 +307,7 @@ def preview_cellpose_params_tiled(
             dpi=dpi,
         )
         axes = np.atleast_2d(axes).reshape(grid_rows, grid_cols)
-        fig.suptitle(label, fontsize=10)
+        fig.suptitle(combo_title(params), fontsize=10)
 
         for ti, crop in enumerate(crops):
             ax = axes[ti // grid_cols, ti % grid_cols]
