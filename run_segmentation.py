@@ -19,7 +19,8 @@ import tifffile
 from pathlib import Path
 from cellpose.models import CellposeModel
 from bens_cellpose_utils import (mask_filter_fixed, save_segmentation_img_w_mask_ns_fixed,
-                                  export_segmented_images, segment_tiled)
+                                  export_segmented_images, segment_tiled,
+                                  apply_config_defaults, maybe_save_config)
 
 
 def parse_args():
@@ -47,7 +48,10 @@ def parse_args():
     p.add_argument('--tile-context', type=int, default=64,
                    help='Extra context pixels around each tile for the model')
     p.add_argument('--batch-size', type=int, default=8)
-    return p.parse_args()
+    apply_config_defaults(p)
+    args = p.parse_args()
+    maybe_save_config(args)
+    return args
 
 
 def main():

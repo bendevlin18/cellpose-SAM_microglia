@@ -21,7 +21,8 @@ from pathlib import Path
 from cellpose.models import CellposeModel
 from bens_cellpose_utils import (mask_filter_fixed, segment_tiled,
                                   save_segmentation_img_w_mask_ns_fixed,
-                                  mask_size_stats, combo_label)
+                                  mask_size_stats, combo_label,
+                                  apply_config_defaults, maybe_save_config)
 
 
 def parse_args():
@@ -44,7 +45,10 @@ def parse_args():
     p.add_argument('--tile-context', type=int, default=64)
     p.add_argument('--batch-size', type=int, default=8)
     p.add_argument('--label-fontsize', type=float, default=2)
-    return p.parse_args()
+    apply_config_defaults(p)
+    args = p.parse_args()
+    maybe_save_config(args)
+    return args
 
 
 def main():

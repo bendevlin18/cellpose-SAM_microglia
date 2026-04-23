@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import tifffile
 from cellpose import plot
@@ -8,6 +9,77 @@ import matplotlib.pyplot as plt
 import os
 import itertools
 from scipy.ndimage import center_of_mass, find_objects
+
+
+def apply_config_defaults(parser, argv=None):
+    """Add --config / --save-config to parser and apply config values as defaults.
+
+    Call after all other add_argument() calls but before parse_args(). CLI flags
+    still override whatever the config specifies, because argparse ranks explicit
+    CLI values above defaults.
+
+    Unknown keys in the config print a warning and are ignored, so the same
+    config can be shared across scripts with slightly different arg sets.
+    """
+    parser.add_argument('--config', default=None,
+                        help='Load argument defaults from a YAML file. '
+                             'CLI flags override values in the config.')
+    parser.add_argument('--save-config', default=None,
+                        help='After parsing, write the resolved args to this YAML '
+                             'file (useful for re-running the same invocation later).')
+
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument('--config', default=None)
+    pre_ns, _ = pre.parse_known_args(argv)
+    if pre_ns.config is None:
+        return
+
+    import yaml
+    with open(pre_ns.config, 'r') as f:
+        data = yaml.safe_load(f) or {}
+    if not isinstance(data, dict):
+        raise ValueError(f'Config file {pre_ns.config} must be a YAML mapping, '
+                         f'got {type(data).__name__}')
+
+    action_by_dest = {a.dest: a for a in parser._actions}
+    unknown = [k for k in data if k not in action_by_dest]
+    if unknown:
+        print(f'  config: ignoring unknown keys {sorted(unknown)}', flush=True)
+    filtered = {k: v for k, v in data.items() if k in action_by_dest}
+
+    # Coerce string values through each action's `type=` so tune's raw-string
+    # saved values (e.g. diameter: '150') work as defaults for validate/run
+    # where the same flag has type=float. Also normalise the literal 'None'
+    # to Python None for typed args — tune stores niter as the string 'None'
+    # because its own --niter is parsed via parse_list, but validate/run
+    # expect Python None.
+    for dest, val in list(filtered.items()):
+        action = action_by_dest[dest]
+        if action.type is None or not isinstance(val, str):
+            continue
+        if val.strip().lower() in ('none', 'null'):
+            filtered[dest] = None
+            continue
+        try:
+            filtered[dest] = action.type(val)
+        except (TypeError, ValueError):
+            pass  # leave as string; argparse will raise a clearer error
+
+    parser.set_defaults(**filtered)
+
+
+def maybe_save_config(args):
+    """Write the resolved argparse namespace to YAML if --save-config was given."""
+    path = getattr(args, 'save_config', None)
+    if not path:
+        return
+    import yaml
+    data = {k: v for k, v in vars(args).items()
+            if k not in ('config', 'save_config')}
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with open(path, 'w') as f:
+        yaml.safe_dump(data, f, sort_keys=True)
+    print(f'Config saved -> {path}', flush=True)
 
 
 def segment_tiled(model, img_chw, iba1_ch, dapi_ch,

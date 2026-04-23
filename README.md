@@ -99,8 +99,37 @@ Shared across most scripts with identical meaning.
 | `--tile-context` | `64` | validate, run | Extra context pixels around each tile |
 | `--batch-size` | `8` | validate, run | Tiles per model forward pass |
 | `--seed` | `0` | tune, validate | RNG seed for image/region selection |
+| `--config` | — | tune, validate, run | Load defaults from a YAML file. CLI flags override config values. See [Config files](#config-files). |
+| `--save-config` | — | tune, validate, run | After parsing, dump the resolved args to this YAML file for re-use |
 
 Parameter flags (`--diameter`, `--cellprob`, `--flow`, `--pix-filter`, `--tnb`, `--niter`) are documented in [PARAMETERS.md](PARAMETERS.md) and use the same short names across all three scripts.
+
+### Config files
+
+Any of `tune_parameters.py`, `validate_parameters.py`, or `run_segmentation.py` can read defaults from a YAML file with `--config path.yaml`. CLI flags override any value set in the config. Use `--save-config path.yaml` on a normal run to generate a starting file you can edit, share, or feed to the next stage.
+
+Minimal config — covers the parameters you care about across all three scripts:
+
+```yaml
+# chosen.yaml
+image_dir: images
+diameter: 150
+cellprob_threshold: -2.0
+flow_threshold: 1.0
+pix_filter: 500
+tile_norm_blocksize: 100
+niter: null
+iba1_channel: 1
+dapi_channel: 0
+```
+
+Then:
+```bash
+conda run -n cellpose python -u validate_parameters.py --config chosen.yaml
+conda run -n cellpose python -u run_segmentation.py   --config chosen.yaml
+```
+
+Keys use the argparse `dest` names (e.g. `cellprob_threshold`, not `cellprob`). Unknown keys are warned about and skipped — you can share one config across scripts even if some keys (like `phase` or `regions_per_image`) only apply to `tune_parameters`.
 
 ### `tune_parameters.py`
 

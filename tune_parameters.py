@@ -31,7 +31,8 @@ sys.stdout.reconfigure(line_buffering=True)
 import tifffile
 from pathlib import Path
 from cellpose.models import CellposeModel
-from bens_cellpose_utils import preview_cellpose_params_tiled
+from bens_cellpose_utils import (preview_cellpose_params_tiled,
+                                  apply_config_defaults, maybe_save_config)
 
 
 KNOWN_GOOD = {
@@ -77,8 +78,10 @@ CSV_COLUMNS = [
 def parse_list(arg, cast):
     if arg is None:
         return None
+    if isinstance(arg, (list, tuple)):
+        return [None if v is None else cast(v) for v in arg]
     out = []
-    for part in arg.split(','):
+    for part in str(arg).split(','):
         part = part.strip()
         if part.lower() == 'none':
             out.append(None)
@@ -131,7 +134,10 @@ def parse_args():
     p.add_argument('--niter', default=None,
                    help='e.g. "None,200,500"')
 
-    return p.parse_args()
+    apply_config_defaults(p)
+    args = p.parse_args()
+    maybe_save_config(args)
+    return args
 
 
 def resolve_diameter(args):
