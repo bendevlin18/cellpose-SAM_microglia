@@ -58,6 +58,13 @@ PHASE_GRIDS = {
     },
 }
 
+DIAMETER_PRESETS = {
+    'small':  [25.0, 50.0, 75.0, 100.0],
+    'medium': [75.0, 112.0, 150.0, 188.0, 225.0],
+    'large':  [200.0, 300.0, 400.0, 500.0],
+    'wide':   [50.0, 150.0, 250.0, 350.0, 450.0],
+}
+
 CSV_COLUMNS = [
     'sample', 'image', 'region', 'crop', 'combo',
     'diameter', 'cellprob_threshold', 'flow_threshold',
@@ -102,7 +109,18 @@ def parse_args():
 
     # Per-parameter overrides (comma-separated). If set, overrides the phase grid.
     p.add_argument('--diameter', default=None,
-                   help='e.g. "150" or "100,150,200"')
+                   help='e.g. "150" or "100,150,200". Overrides --diameter-center and --diameter-preset.')
+    p.add_argument('--diameter-preset', default=None,
+                   choices=list(DIAMETER_PRESETS.keys()),
+                   help=f'Named diameter sweep: {", ".join(f"{k}={v}" for k, v in DIAMETER_PRESETS.items())}')
+    p.add_argument('--diameter-center', type=float, default=None,
+                   help='Generate a linspace diameter sweep centred on this value. '
+                        'Defaults to n=5, spread=0.5 (e.g. 150 -> [75, 112.5, 150, 187.5, 225]).')
+    p.add_argument('--diameter-n', type=int, default=5,
+                   help='Number of values for --diameter-center (default 5).')
+    p.add_argument('--diameter-spread', type=float, default=0.5,
+                   help='Fractional half-width for --diameter-center: values are '
+                        'linspace(center*(1-spread), center*(1+spread), n). Default 0.5.')
     p.add_argument('--cellprob', dest='cellprob_threshold', default=None)
     p.add_argument('--flow', dest='flow_threshold', default=None)
     p.add_argument('--pix-filter', default=None)
@@ -113,12 +131,26 @@ def parse_args():
     return p.parse_args()
 
 
+def resolve_diameter(args):
+    """Precedence: explicit list > center+spread > preset > None (use phase grid)."""
+    if args.diameter is not None:
+        return parse_list(args.diameter, float)
+    if args.diameter_center is not None:
+        lo = args.diameter_center * (1 - args.diameter_spread)
+        hi = args.diameter_center * (1 + args.diameter_spread)
+        return [round(float(v), 2)
+                for v in np.linspace(lo, hi, args.diameter_n).tolist()]
+    if args.diameter_preset is not None:
+        return list(DIAMETER_PRESETS[args.diameter_preset])
+    return None
+
+
 def build_grid(args):
     grid = {k: [v] for k, v in KNOWN_GOOD.items()}
     grid.update(PHASE_GRIDS[args.phase])
 
     overrides = {
-        'diameter':            parse_list(args.diameter, float),
+        'diameter':            resolve_diameter(args),
         'cellprob_threshold':  parse_list(args.cellprob_threshold, float),
         'flow_threshold':      parse_list(args.flow_threshold, float),
         'pix_filter':          parse_list(args.pix_filter, int),

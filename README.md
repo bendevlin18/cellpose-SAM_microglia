@@ -115,6 +115,15 @@ Parameter flags (`--diameter`, `--cellprob` / `--cellprob-threshold`, `--flow` /
 
 Parameter overrides accept comma-separated lists (`--diameter 100,150,200`) and replace that parameter's values in the phase grid.
 
+Diameter sweeps have two extra shortcuts (precedence: `--diameter` > `--diameter-center` > `--diameter-preset`):
+
+| Flag | Default | Description |
+|---|---|---|
+| `--diameter-preset` | — | Named list: `small=[25,50,75,100]`, `medium=[75,112,150,188,225]`, `large=[200,300,400,500]`, `wide=[50,150,250,350,450]` |
+| `--diameter-center` | — | Centre value; auto-generates `linspace(center*(1-spread), center*(1+spread), n)` — e.g. `--diameter-center 150` → `[75, 112.5, 150, 187.5, 225]` |
+| `--diameter-n` | `5` | Number of values for `--diameter-center` |
+| `--diameter-spread` | `0.5` | Fractional half-width for `--diameter-center` |
+
 ### `validate_parameters.py`
 
 | Flag | Default | Description |
