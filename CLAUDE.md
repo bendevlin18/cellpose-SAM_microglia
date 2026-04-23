@@ -59,7 +59,7 @@ masks = segment_tiled(model, img_chw, iba1_ch=1, dapi_ch=0,
 ```
 masks/      *_mask.tif          — uint16 label arrays
 labelled/   *_labelled_segmentations.png  — annotated overview PNGs (IBA1 + mask overlay + cell ID labels)
-exports/    <image_stem>/cell_XXXX.tif   — per-cell square IBA1 crops, background zeroed, 20px padding
+exports/    <image_stem>/<image_stem>_cell_XXXX.tif   — per-cell square IBA1 crops, background zeroed, 20px padding
 ```
 
 ## Known issues / in-progress

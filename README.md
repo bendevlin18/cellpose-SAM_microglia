@@ -56,7 +56,7 @@ Outputs labelled full-image overviews to `validate/` + prints cell counts and ma
 
 ```bash
 conda run -n cellpose python -u run_segmentation.py \
-    --diameter 150 --cellprob-threshold -2.0 --flow-threshold 1.0 --tile-norm-blocksize 100
+    --diameter 150 --cellprob -2.0 --flow 1.0 --tnb 100
 ```
 
 Outputs:
@@ -100,7 +100,7 @@ Shared across most scripts with identical meaning.
 | `--batch-size` | `8` | validate, run | Tiles per model forward pass |
 | `--seed` | `0` | tune, validate | RNG seed for image/region selection |
 
-Parameter flags (`--diameter`, `--cellprob` / `--cellprob-threshold`, `--flow` / `--flow-threshold`, `--pix-filter`, `--tnb` / `--tile-norm-blocksize`, `--niter`) are documented in [PARAMETERS.md](PARAMETERS.md). Note that `tune` and `validate` use the short names (`--cellprob`, `--flow`, `--tnb`) while `run_segmentation` uses the long names (`--cellprob-threshold`, `--flow-threshold`, `--tile-norm-blocksize`).
+Parameter flags (`--diameter`, `--cellprob`, `--flow`, `--pix-filter`, `--tnb`, `--niter`) are documented in [PARAMETERS.md](PARAMETERS.md) and use the same short names across all three scripts.
 
 ### `tune_parameters.py`
 
@@ -144,13 +144,13 @@ Diameter sweeps have two extra shortcuts (precedence: `--diameter` > `--diameter
 | Flag | Default | Description |
 |---|---|---|
 | `--diameter` | `150` | See PARAMETERS.md |
-| `--cellprob-threshold` | `-2.0` | Cell probability threshold |
-| `--flow-threshold` | `1.0` | Flow error threshold |
-| `--tile-norm-blocksize` | `100` | Local-contrast block size (0 = global) |
+| `--cellprob` | `-2.0` | Cell probability threshold |
+| `--flow` | `1.0` | Flow error threshold |
+| `--tnb` | `100` | `tile_norm_blocksize` (0 = global normalization) |
 | `--pix-filter` | `500` | Minimum mask size in px |
 | `--mask-dir` | `masks` | Output dir for `_mask.tif` files |
 | `--labelled-dir` | `labelled` | Output dir for annotated overview PNGs |
-| `--exports-dir` | `exports` | Output dir for per-cell IBA1 crops |
+| `--exports-dir` | `exports` | Output dir for per-cell IBA1 crops (`<stem>_cell_XXXX.tif`) |
 | `--cell-padding` | `20` | Padding (px) around each cell bounding box in per-cell crops |
 
 ### `visualize_results.py`

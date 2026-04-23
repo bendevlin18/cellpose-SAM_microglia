@@ -6,7 +6,7 @@ Best parameters found for this dataset:
 
 Usage:
     conda run -n cellpose python run_segmentation.py
-    conda run -n cellpose python run_segmentation.py --cellprob-threshold -1.5
+    conda run -n cellpose python run_segmentation.py --cellprob -1.5
 """
 import argparse
 import sys
@@ -25,9 +25,9 @@ from bens_cellpose_utils import (mask_filter_fixed, save_segmentation_img_w_mask
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument('--diameter', type=float, default=150)
-    p.add_argument('--flow-threshold', type=float, default=1.0)
-    p.add_argument('--cellprob-threshold', type=float, default=-2.0)
-    p.add_argument('--tile-norm-blocksize', type=int, default=100)
+    p.add_argument('--flow', dest='flow_threshold', type=float, default=1.0)
+    p.add_argument('--cellprob', dest='cellprob_threshold', type=float, default=-2.0)
+    p.add_argument('--tnb', dest='tile_norm_blocksize', type=int, default=100)
     p.add_argument('--pix-filter', type=int, default=500,
                    help='Remove masks smaller than this many pixels')
     p.add_argument('--iba1-channel', type=int, default=1)
@@ -134,6 +134,7 @@ def main():
             odir=cell_export_dir,
             iba1_channel=args.iba1_channel,
             padding=args.cell_padding,
+            image_stem=tif_path.stem,
         )
         print(f'  -> {n_exported} cell crops exported to {cell_export_dir}/', flush=True)
 

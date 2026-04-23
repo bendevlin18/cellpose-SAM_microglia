@@ -65,11 +65,15 @@ def segment_tiled(model, img_chw, iba1_ch, dapi_ch,
     return full_masks.astype(np.uint16)
 
 
-def export_segmented_images(img_chw, masks, odir, iba1_channel=1, padding=20):
+def export_segmented_images(img_chw, masks, odir, iba1_channel=1, padding=20,
+                            image_stem=None):
     """Export each segmented cell as a square-cropped tif of the IBA1 channel.
 
-    img_chw : (C, H, W) uint8 array
-    masks   : (H, W) uint16 label array
+    img_chw    : (C, H, W) uint8 array
+    masks      : (H, W) uint16 label array
+    image_stem : if set, output files are named "<image_stem>_cell_XXXX.tif" so
+                 cells stay identifiable after being copied out of their per-image
+                 subdirectory. Omit for the plain "cell_XXXX.tif" layout.
     """
     odir = Path(odir)
     odir.mkdir(parents=True, exist_ok=True)
@@ -117,7 +121,9 @@ def export_segmented_images(img_chw, masks, odir, iba1_channel=1, padding=20):
         square_mask[y_off:y_off + h_crop, x_off:x_off + w_crop] = padded_mask
         square_img[~square_mask] = 0
 
-        tifffile.imwrite(str(odir / f'cell_{cell_id:04d}.tif'), square_img)
+        cell_name = (f'{image_stem}_cell_{cell_id:04d}.tif' if image_stem
+                     else f'cell_{cell_id:04d}.tif')
+        tifffile.imwrite(str(odir / cell_name), square_img)
         n_exported += 1
 
     return n_exported

@@ -20,14 +20,6 @@
 - A clean CLI wrapper so it can be run standalone without editing code
 - Default param grid tuned for microglia: `ft=1.0, cp=-2.0, d=150, tnb=100`
 
-## Exports: include source image name in per-cell filenames
-
-Currently `export_segmented_images` writes `exports/<image_stem>/cell_XXXX.tif`, so the source image is only encoded in the directory. Change the filenames themselves to include the image stem (e.g. `<image_stem>_cell_XXXX.tif`) so the files remain identifiable after being copied out of their subdirectory or flattened into a single pool for downstream analysis.
-
-- Update `export_segmented_images` to accept an `image_stem` (or derive from a passed path) and prepend it to each tif filename.
-- Update `run_segmentation.py` to pass the stem through.
-- Keep the per-image subdirectory structure — this is additive naming, not a layout change.
-
 ## Labelled image bug
 
 `save_segmentation_img_w_mask_ns_fixed` was not producing output during the full pipeline run. The cause is unknown — `run_segmentation.py` now has try/except around the call that prints the error message. Next run will reveal the actual exception. Likely candidates:
